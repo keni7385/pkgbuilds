@@ -1,0 +1,38 @@
+# Maintainer: Andrea Corsini <andrea.corsini@outlook.com>
+pkgname=tabbed-git
+pkgver=0.6.r35.b5f9ec6
+pkgrel=1
+pkgdesc="Simple generic tabbed frontend to xembed aware application"
+arch=('i686' 'x86_64')
+url="https://tools.suckless.org/tabbed"
+license=('MIT/X')
+depends=('libxft')
+makedepends=('git')
+provides=("${pkgname%-git}")
+conflicts=("${pkgname%-git}")
+source=("${pkgname%-git}::git+https://git.suckless.org/tabbed")
+md5sums=('SKIP')
+
+pkgver() {
+	cd "$srcdir/${pkgname%-git}"
+	printf "%s" "$(git describe --tag | sed 's/\([^-]*-\)g/r\1/;s/-/./g')"
+}
+
+prepare() {
+#	cd "$srcdir/${pkgname%-git}"
+#	patch -p1 -i "$srcdir/${pkgname%-VCS}.patch"
+  if [[ -f $SRCDEST/config.h ]]; then
+    cp $SRCDEST/config.h "$srcdir/${pkgname%-git}/config.h"
+  fi
+}
+
+build() {
+	cd "$srcdir/${pkgname%-git}"
+	make PREFIX=/usr
+} 
+
+package() {
+	cd "$srcdir/${pkgname%-git}"
+	make DESTDIR="$pkgdir/" PREFIX=/usr install
+  install -Dm0644 LICENSE "$pkgdir/usr/share/licenses/${pkgname%-git}/LICENSE"
+}

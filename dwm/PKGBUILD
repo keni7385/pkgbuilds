@@ -1,0 +1,30 @@
+# Maintainer: Andrea Corsini <andrea.corsini@outlook.com>
+pkgname=dwm-git
+pkgver=6.2.r4.47f2d7e
+pkgrel=1
+pkgdesc="A dynamic window manager for X"
+arch=('i686' 'x86_64')
+url="https://dwm.suckless.org"
+license=('MIT/X')
+depends=('libx11' 'libxinerama' 'libxft' 'freetype2' 'st' 'dmenu')
+makedepends=('git')
+provides=("${pkgname%-git}")
+conflicts=("${pkgname%-git}")
+source=("${pkgname%-git}::git+ssh://git@github.com/keni7385/dwm.git")
+md5sums=('SKIP')
+
+pkgver() {
+	cd "$srcdir/${pkgname%-git}"
+	printf "%s" "$(git describe --tag | sed 's/\([^-]*-\)g/r\1/;s/-/./g')"
+}
+
+build() {
+	cd "$srcdir/${pkgname%-git}"
+	make PREFIX=/usr X11INC=/usr/include/X11 X11LIB=/usr/lib/X11 FREETYPEINC=/usr/include/freetype2
+} 
+
+package() {
+	cd "$srcdir/${pkgname%-git}"
+	make DESTDIR="$pkgdir/" PREFIX=/usr install
+  install -Dm0644 LICENSE "$pkgdir/usr/share/licenses/${pkgname%-git}/LICENSE"
+}

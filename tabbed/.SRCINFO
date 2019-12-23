@@ -1,0 +1,17 @@
+pkgbase = tabbed-git
+	pkgdesc = Simple generic tabbed frontend to xembed aware application
+	pkgver = 0.6.r35.b5f9ec6
+	pkgrel = 1
+	url = https://tools.suckless.org/tabbed
+	arch = i686
+	arch = x86_64
+	license = MIT/X
+	makedepends = git
+	depends = libxft
+	provides = tabbed
+	conflicts = tabbed
+	source = tabbed::git+https://git.suckless.org/tabbed
+	md5sums = SKIP
+
+pkgname = tabbed-git
+

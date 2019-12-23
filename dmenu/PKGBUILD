@@ -1,0 +1,42 @@
+# Maintainer: Andrea Corsini <andrea.corsini@outlook.com>
+pkgname=dmenu-git
+pkgver=4.9.r5.db6093f
+pkgrel=1
+pkgdesc="Dynamic menu for X, originally designed for dwm"
+arch=('i686' 'x86_64')
+url="https://tools.suckless.org/dmenu"
+license=('MIT/X')
+depends=('sh' 'libxinerama' 'libxft')
+makedepends=('git')
+provides=("${pkgname%-git}")
+conflicts=("${pkgname%-git}")
+source=("${pkgname%-git}::git+https://git.suckless.org/dmenu"
+        'dmenu-password-4.7.diff')
+md5sums=('SKIP'
+         'b7edb3ef4143f4caafb632897452222e')
+
+pkgver() {
+	cd "$srcdir/${pkgname%-git}"
+	printf "%s" "$(git describe --tag | sed 's/\([^-]*-\)g/r\1/;s/-/./g')"
+}
+
+prepare() {
+  cd "$srcdir/${pkgname%-git}"
+  for file in "${source[@]}"; do
+    if [[ "$file" == *.diff || "$file" == *.patch ]]; then
+      # add all patches present in source array
+      patch -Np1 < "$srcdir/$(basename ${file})"
+    fi
+  done
+}
+
+build() {
+	cd "$srcdir/${pkgname%-git}"
+	make PREFIX=/usr
+} 
+
+package() {
+	cd "$srcdir/${pkgname%-git}"
+	make DESTDIR="$pkgdir/" PREFIX=/usr install
+  install -Dm0644 LICENSE "$pkgdir/usr/share/licenses/${pkgname%-git}/LICENSE"
+}

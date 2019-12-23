@@ -1,0 +1,96 @@
+diff -u a/config.def.h b/config.def.h
+--- a/config.def.h	2019-07-19 15:24:27.132636338 +0200
++++ b/config.def.h	2019-07-19 15:28:07.862641772 +0200
+@@ -6,6 +6,7 @@
+ static char *certdir        = "~/.config/surf/certificates/";
+ static char *cachedir       = "~/.config/surf/cache/";
+ static char *cookiefile     = "~/.config/surf/cookies.txt";
++static char *searchurl      = "duckduckgo.com/?q=%s";
+ 
+ /* Webkit default features */
+ /* Highest priority value will be used.
+@@ -77,6 +78,14 @@
+         } \
+ }
+ 
++#define SEARCH() { \
++        .v = (const char *[]){ "/bin/sh", "-c", \
++             "xprop -id $1 -f $2 8s -set $2 \"" \
++             "$(dmenu -p Search: -w $1 < /dev/null)\"", \
++             "surf-search", winid, "_SURF_SEARCH", NULL \
++        } \
++}
++
+ /* DOWNLOAD(URI, referer) */
+ #define DOWNLOAD(u, r) { \
+         .v = (const char *[]){ "st", "-e", "/bin/sh", "-c",\
+@@ -146,7 +155,8 @@
+ 	{ MODKEY,                GDK_KEY_s,      spawn,      SETPROP("_SURF_FIND", "_SURF_FIND", PROMPT_FIND) },
+ 	{ MODKEY,                GDK_KEY_slash,  spawn,      SETPROP("_SURF_FIND", "_SURF_FIND", PROMPT_FIND) },
+ 	{ MODKEY,                GDK_KEY_m,      spawn,      BM_ADD("_SURF_URI") },
+-
++  { MODKEY,                GDK_KEY_d,      spawn,      SEARCH() },
++  
+ 	{ 0,                     GDK_KEY_Escape, stop,       { 0 } },
+ 	{ MODKEY,                GDK_KEY_c,      stop,       { 0 } },
+ 
+Only in a: config.def.h.orig
+Common subdirectories: a/.git and b/.git
+diff -u a/surf.c b/surf.c
+--- a/surf.c	2019-07-19 15:23:47.219302023 +0200
++++ b/surf.c	2019-07-19 15:27:02.265973486 +0200
+@@ -35,7 +35,7 @@
+ #define LENGTH(x)               (sizeof(x) / sizeof(x[0]))
+ #define CLEANMASK(mask)         (mask & (MODKEY|GDK_SHIFT_MASK))
+ 
+-enum { AtomFind, AtomGo, AtomUri, AtomLast };
++enum { AtomFind, AtomSearch, AtomGo, AtomUri, AtomLast };
+ 
+ enum {
+ 	OnDoc   = WEBKIT_HIT_TEST_RESULT_CONTEXT_DOCUMENT,
+@@ -231,6 +231,7 @@
+ static void togglecookiepolicy(Client *c, const Arg *a);
+ static void toggleinspector(Client *c, const Arg *a);
+ static void find(Client *c, const Arg *a);
++static void search(Client *c, const Arg *a);
+ 
+ /* Buttons */
+ static void clicknavigate(Client *c, const Arg *a, WebKitHitTestResult *h);
+@@ -326,6 +327,7 @@
+ 
+ 	/* atoms */
+ 	atoms[AtomFind] = XInternAtom(dpy, "_SURF_FIND", False);
++	atoms[AtomSearch] = XInternAtom(dpy, "_SURF_SEARCH", False);
+ 	atoms[AtomGo] = XInternAtom(dpy, "_SURF_GO", False);
+ 	atoms[AtomUri] = XInternAtom(dpy, "_SURF_URI", False);
+ 
+@@ -577,6 +579,19 @@
+ 	g_free(url);
+ }
+ 
++void
++search(Client *c, const Arg *a)
++{
++	Arg arg;
++	char *url;
++
++	url = g_strdup_printf(searchurl, a->v);
++	arg.v = url;
++	loaduri(c, &arg);
++
++	g_free(url);
++}
++
+ const char *
+ geturi(Client *c)
+ {
+@@ -1311,6 +1326,9 @@
+ 				find(c, NULL);
+ 
+ 				return GDK_FILTER_REMOVE;
++			} else if (ev->atom == atoms[AtomSearch]) {
++				a.v = getatom(c, AtomSearch);
++				search(c, &a);
+ 			} else if (ev->atom == atoms[AtomGo]) {
+ 				a.v = getatom(c, AtomGo);
+ 				loaduri(c, &a);
